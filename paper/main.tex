@@ -1,8 +1,9 @@
 \documentclass[runningheads]{llncs}
 
+% ============ 中文支持 ============
+\usepackage{ctex}
+
 % ============ Packages ============
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -12,14 +13,13 @@
 \usepackage{color}
 \usepackage{float}
 
-% ============ Metadata ============
-\title{The Impact of New-Quality Productivity on Urban Transit Recovery:\
-       Evidence from Multi-Source Spatiotemporal Data in New York City}
+% ============ 元数据 ============
+\title{新质生产力冲击下的城市交通复苏与结构演化\\
+       ——基于纽约多源时空数据的实证研究}
 
-\author{Author Name\inst{1} \and Advisor Name\inst{1}}
+\author{作者姓名\inst{1} \and 导师姓名\inst{1}}
 
-\institute{Institution Name\\
-           City, Country\\
+\institute{某某大学~~~~某某学院\\
            \email{email@example.com}}
 
 \begin{document}
@@ -27,382 +27,468 @@
 \maketitle
 
 \begin{abstract}
-The rise of ``new-quality productivity''---characterized by AI, big data, cloud computing, and related high-tech sectors---has reshaped employment structures in global cities.
-This paper examines whether these structural changes have left observable traces in urban transit behavior
-by linking LinkedIn job posting data (1.3M records) with MTA ridership data (6 years, 9 modes, 428 stations)
-through a hypothesis-driven cross-validation framework.
-We employ Chow structural break tests, TF-IDF with NMF topic modeling, KMeans clustering,
-and XGBoost with SHAP to test three layers of hypotheses:
-(1) whether AI-driven job growth coincides with structural breaks in transit recovery curves,
-(2) whether remote work prevalence among new-quality jobs weakens peak-hour commuting patterns, and
-(3) whether the concentration of high-salary positions in Manhattan drives faster recovery of commuter rail over local transit.
-Results show moderate support (2 of 3 layers passed): significant Chow breaks at the December 2022 AI inflection point
-in Subway ($F=3.9$, $p=.012$), Bus ($F=9.4$, $p<.001$), and MNR ($F=5.0$, $p=.003$);
-a clear recovery hierarchy of LIRR/MNR (122.5\%) $>$ Subway (89.9\%) $>$ Bus (68.3\%), consistent with the salary-commute-distance hypothesis;
-and a modest decline in commute-type station share from 16.9\% to 15.0\%, directionally consistent with remote work effects but not yet statistically conclusive.
-Our findings suggest that while new-quality productivity's impact on transit is structurally detectable,
-its transmission remains heterogeneous across modes and geographies.
+以人工智能为代表的新质生产力正在重塑全球城市的就业空间结构，
+但其对城市交通系统的传导效应尚缺乏系统性实证检验。
+本文以纽约市为实验室，将 LinkedIn 岗位数据（1.3M 技能记录、9.7 万条岗位详情）与 MTA 客流量数据
+（6 年 $\times$ 9 种运输方式、428 站点 $\times$ 小时粒度）进行关联，
+构建"假设驱动 + 结构化推论"的三层交叉验证框架。
+方法上，综合运用 Chow 结构断点检验、TF-IDF + NMF 主题建模、KMeans 聚类、
+XGBoost + SHAP 可解释性分析等技术。
 
-\keywords{New-quality productivity \and Urban transit recovery \and Structural break analysis \and Cross-validation \and Multi-source spatiotemporal data.}
+结果表明：新质生产力的就业结构变迁在 MTA 客流行为中留下了\textbf{渐进且异质}的印记——
+运输方式恢复层级 LIRR/MNR（122.5\%）$>$ Subway（89.9\%）$>$ Bus（68.3\%）完美成立，
+强有力地支持了"高薪新质岗位集中曼哈顿、拉长通勤距离"的假说。
+但时间维度上的结构断点检验呈现更为审慎的图景：
+2022 年 12 月 AI 假设断点虽在 3/4 方式上显著（Subway $F=3.9$, Bus $F=9.4$, MNR $F=5.0$），
+灵敏度扫描却显示实际 $F$ 峰值分散于 2021 年 12 月至 2023 年 5 月之间，
+且安慰剂对照点全部显著，提示恢复曲线的非线性本身即可触发断点信号——
+AI 的因果效应在现有数据条件下无法与疫情复苏效应排他性分离。
+通勤型站点占比下降 1.9 个百分点但统计不显著（$p=0.260$），
+且通勤比中位数不降反升，提示混合办公（而非完全远程）是当前主导模式。
+
+综合判决为弱支持（1/3 层通过、2/3 层弱支持）。
+本文的核心发现是：城市交通系统并非对技术冲击做出即时、统一的响应，
+而是通过\textbf{运输方式分化和通勤模式渐变}，不均匀地吸收着劳动力市场的结构性重塑。
+\keywords{新质生产力 \and 城市交通复苏 \and 结构断点检验 \and 交叉验证 \and 多源时空数据}
 \end{abstract}
 
 % ===================================================================
-\section{Introduction}
+\section{引言}
 % ===================================================================
 
-The post-pandemic era has witnessed a profound restructuring of both labor markets and urban mobility patterns.
-As AI-powered technologies---exemplified by the release of ChatGPT in December 2022---accelerate the growth of
-high-tech industries, the spatial organization of work is undergoing fundamental change.
-``New-quality productivity'' (\emph{xin-zhi shengchanli}), a concept encompassing AI/ML, cloud computing,
-big data analytics, renewable energy, biotech, semiconductors, and fintech, has become a dominant force
-in urban labor markets~\cite{autor2023}.
+后疫情时代，全球城市正经历一场由技术革命与公共卫生危机叠加驱动的深刻转型。
+2023 年，中国中央政府正式提出"新质生产力"（new-quality productivity）概念，
+将其界定为以科技创新为主导、摆脱传统增长路径的生产力新形态，
+涵盖人工智能、云计算、大数据、新能源、生物科技、半导体等战略性新兴产业~\cite{zhou2023}。
+这一政策话语并非中国特有现象的回声——2022 年 12 月 ChatGPT 的发布标志着生成式人工智能
+进入大规模商业化阶段，以 AI/ML、云计算、金融科技为代表的高技能岗位正在全球劳动力市场中
+经历爆发式增长与空间重构~\cite{brynjolfsson2023,eloundou2023,felten2023}。
 
-However, the transportation implications of this shift remain underexplored.
-If new-quality jobs are disproportionately remote-friendly, pay higher salaries enabling longer-distance commuting,
-and concentrate in central business districts like Manhattan, then urban transit systems should exhibit corresponding behavioral signatures:
-weakening peak-hour structure, substitution toward commuter rail over local transit, and structural breaks in aggregate ridership trajectories.
+从城市经济学的视角看，就业是通勤需求的源函数（source function），
+而通勤模式则是就业空间结构在交通网络上的投影~\cite{glaeser2001}。
+经典理论指出，高技能岗位的集聚会产生"知识溢出"效应，吸引高收入劳动者向中央商务区（CBD）集中，
+进而催生对快速、长距离通勤方式（如通勤铁路）的需求；
+与此同时，远程办公技术的普及则可能削弱这种空间绑定，
+导致高峰通勤的扁平化与短途公共交通的萎缩~\cite{dingel2020,salon2022,bloom2023}。
+因此，当新质生产力同时改变"岗位的技能构成"（what）、"工作的空间分布"（where）
+以及"劳动的时间组织方式"（when）时，城市交通系统理应记录下其结构性的响应。
 
-This paper investigates these hypotheses using New York City as a laboratory.
-We combine two unprecedented data sources:
-(1) \textbf{MTA ridership records} spanning 6 years (March 2020--June 2026), covering 9 transit modes at daily granularity
-and 428 subway stations at hourly granularity (7.4 million aggregated records); and
-(2) \textbf{LinkedIn job postings} including 1.3 million skill-tagged job records and 124,000 detailed postings
-with salary, remote work, and location fields.
+然而，现有文献对上述传导链条的实证检验呈现出明显的碎片化特征。
+一方面，劳动经济学研究已充分证实 AI 对高技能白领岗位的替代与互补效应~\cite{acemoglu2018,acemoglu2020,autor2015,frey2017}；
+另一方面，交通与城市规划文献详细记录了 COVID-19 疫情期间远程办公对客流模式的冲击~\cite{beck2020,brough2021,devos2020,tirachini2020}。
+但这两个文献群之间仍存在显著缺口：我们尚不清楚，由 AI 驱动的就业结构质变
+是否已经在城市交通系统中留下了独立于疫情复苏效应的可观测印记？
+更重要的是，若新质生产力的影响并非以"单点突变"的形式呈现，
+而是以"渐进渗透"的方式重塑通勤距离、高峰结构与运输方式选择，
+则传统的结构断点方法可能低估甚至误判其真实效应。
 
-Our contribution is threefold:
+本文以纽约市为实验室，试图填补上述缺口。
+纽约作为全球金融与科技中心，其劳动力市场的新质化进程具有典型性：
+曼哈顿中城与下城集聚了大量高薪科技岗位，而外围行政区（布鲁克林、皇后区、史泰登岛）
+则构成了传统服务业的就业腹地。这种空间极化为检验"就业结构$\to$交通格局"的传导机制
+提供了理想的自然实验场景。
+
+本文综合两类独特的数据资源展开实证研究：
+（1）\textbf{MTA 客流量数据}：覆盖 2020 年 3 月至 2026 年 6 月、9 种运输方式的日度运量数据，
+以及 2022--2024 年 428 个地铁站的小时级刷卡数据（聚合后 741 万条）~\cite{mta2024}；
+（2）\textbf{LinkedIn 岗位数据}：包含 129.6 万条岗位技能记录和 9.7 万条岗位详情
+（含薪资、远程办公、工作地点等字段）。
+
+本文的核心方法论创新在于构建了一个\textbf{"假设驱动 + 结构化推论"的三层交叉验证框架}：
+LinkedIn 岗位数据负责提出假设（行业结构 $\to$ 交通推论），
+MTA 客流数据负责行为验证（实际客流检验），
+两个推理链条保持严格独立、彼此印证。
+具体而言：
 \begin{itemize}
-  \item We design a \textbf{hypothesis-driven cross-validation framework} that treats LinkedIn data as hypothesis-generating
-        and MTA data as hypothesis-testing, maintaining independence between inference sources.
-  \item We apply \textbf{structural break analysis} (Chow test) to identify whether the AI acceleration period
-        (post-December 2022) marks a statistically significant regime change in transit recovery.
-  \item We provide \textbf{three-layer empirical evidence} linking labor market restructuring to transit behavioral change,
-        supported by machine learning (XGBoost + SHAP) quantification of feature importance.
+  \item \textbf{L1 结构断点验证：}LinkedIn 推论"AI 岗位 2023 年起爆发"$\to$
+        MTA 检验 2022-12 是否存在 Chow 断点；
+  \item \textbf{L2 通勤模式验证：}LinkedIn 推论"新质行业远程率显著高于传统"$\to$
+        MTA 检验 428 站点通勤比是否逐年下降；
+  \item \textbf{L3 运输方式替代验证：}LinkedIn 推论"高薪新质岗位集中于曼哈顿"$\to$
+        MTA 检验 LIRR/MNR $>$ Subway $>$ Bus 的恢复层级是否成立。
 \end{itemize}
 
+与单一数据源研究不同，本框架要求 LinkedIn 的就业结构推论与 MTA 的客流行为证据
+在三个独立维度上相互对照，从而在非实验环境下最大化因果推断的稳健性。
+
 % ===================================================================
-\section{Data}
+\section{数据}
 % ===================================================================
 
-Our analysis draws on four primary data assets summarized in Table~\ref{tab:data}.
+本文使用四份核心数据资产，概览见表~\ref{tab:data}。
 
 \begin{table}[H]
 \centering
-\caption{Data assets and characteristics}
+\caption{数据资产概览}
 \label{tab:data}
 \footnotesize
-\begin{tabular}{@{}p{2.3cm}p{2.0cm}p{2.3cm}p{1.6cm}p{3.0cm}@{}}
+\begin{tabular}{@{}p{2.5cm}p{2.2cm}p{2.3cm}p{1.6cm}p{2.5cm}@{}}
 \toprule
-\textbf{Source} & \textbf{Time span} & \textbf{Granularity} & \textbf{Scale} & \textbf{Key fields} \\
+\textbf{数据来源} & \textbf{时间跨度} & \textbf{粒度} & \textbf{规模} & \textbf{关键字段} \\
 \midrule
-MTA Daily Ridership   & 2020-03\,--\,2026-06 & Daily $\times$ 9 modes & 17,115 rows & date, mode, ridership \\
-MTA Subway Hourly      & 2022-05\,--\,2024-12 & Hourly $\times$ 428 stns & 7.41M rows & station, borough, entries \\
-LinkedIn Job Skills    & $\sim$2024 (cross-section) & Job-level & 1.29M rows & job\_link, job\_skills \\
-LinkedIn Postings      & 2023-12\,--\,2024-04 & Job-level & 96.9K unique & title, description, salary \\
+MTA 每日运量   & 2020-03 -- 2026-06 & 日 $\times$ 9 模式 & 17,115 行 & 日期、模式、运量 \\
+MTA 地铁刷卡   & 2022-05 -- 2024-12 & 小时 $\times$ 428 站 & 741 万行 & 时间戳、站点、区、进站量 \\
+LinkedIn 技能  & $\sim$2024（截面） & 岗位级 & 129.4 万行 & 岗位链接、技能列表 \\
+LinkedIn 详情  & 2023-12 -- 2024-04 & 岗位级 & 9.7 万条（去重后） & 标题、描述、薪资、远程、地点 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{MTA Ridership Data}
-Daily ridership data from the MTA covers Subway, Bus, LIRR, Metro-North (MNR), Staten Island Railway (SIR),
-Access-A-Ride (AAR), Bridges \& Tunnels (BT), CBD entries, and CRZ entries.
-We compute monthly recovery rates using a pre-pandemic baseline (January--February 2020 mean) as denominator.
-Hourly subway turnstile data is aggregated to station-hour granularity,
-from which we derive peak-morning (7--10 AM) and peak-evening (4--7 PM) entry volumes per station per year.
+\subsection{MTA 客流量数据}
 
-\subsection{LinkedIn Job Data}
-The LinkedIn job skills dataset contains 1.3 million records across 20 NMF-derived topics.
-We construct a 7-category ``new-quality'' seed lexicon (AI/ML, Cloud/DevOps, Data Analytics,
-Renewable Energy, Biotech/Health, Semiconductor, Fintech) verified on this corpus.
-The LinkedIn postings dataset (124K records after deduplication) enriches this with
-work type, remote work flags, normalized salary, and location information.
+MTA 每日运量数据涵盖 Subway（地铁）、Bus（公交）、LIRR（长岛铁路）、
+MNR（大都会北方铁路）、SIR（史泰登岛铁路）、AAR（无障碍车）、
+BT（桥梁与隧道）等 9 种运输方式。
+我们以 2020 年 1--2 月均值作为疫情前基线，计算各方式的月度恢复率
+$R_t = \text{当月日均运量} / \text{基线日均运量}$。
+小时级地铁刷卡数据~\cite{mtaturnstilekaggle2024}按站点-小时聚合，提取早高峰（7:00--10:00）和晚高峰（16:00--19:00）进站量，
+用于逐年计算每个站点的通勤比（commute\_ratio）。
 
-\subsection{Preprocessing Pipeline}
-All raw CSV files are processed through a DuckDB-based ETL pipeline~\cite{duckdb2023},
-aggregating 8~GB of hourly ridership data at 200~MB peak memory.
-Intermediate results are cached in Parquet format for reproducibility.
-The full pipeline processes 1.3M skill records and 96.9K job descriptions
-through TF-IDF vectorization ($n_{\text{features}}=5000$, 1--2 ngrams) and NMF decomposition ($k=20$ topics).
+\subsection{LinkedIn 岗位数据与新质行业画像}
 
-% ===================================================================
-\section{Methodology}
-% ===================================================================
+LinkedIn 岗位技能数据集~\cite{linkedin2024kaggle}包含 129.4 万条记录，经 TF-IDF + NMF 主题建模后识别出 20 个行业主题。
+我们构建了 7 大类"新质"种子词库（AI/ML、Cloud/DevOps、数据分析、新能源、生物科技/健康、
+半导体、金融科技），在 1.3M 技能语料上完成验证。
+LinkedIn 岗位详情数据集（去重后 9.7 万条）补充了工作类型、远程办公标识、标准化薪资和位置信息。
 
-\subsection{Hypothesis-Driven Cross-Validation Framework}
+NMF 主题建模从 9.7 万条岗位描述中识别出 20 个主题，其中 1 个主题明确对应新质行业：
+Topic~4（cloud, data, software, engineer, developer）。
+种子词库策略识别出 31,565 条（32.6\%）新质岗位；
+综合双重判定后共标记 35,421 条（36.5\%）为新质岗位。
 
-Our core methodological innovation is a three-layer cross-validation design
-that treats LinkedIn NLP output as \emph{hypotheses} and MTA ridership data as \emph{evidence},
-maintaining strict independence between the two inference streams (Fig.~\ref{fig:framework}).
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.85\textwidth]{figures/fig11_three_layer_validation.png}
-\caption{Three-layer cross-validation framework. L1: structural breaks in recovery curves;
-L2: commute ratio evolution; L3: mode recovery hierarchy.}
-\label{fig:framework}
-\end{figure}
-
-\subsubsection*{Layer 1 --- Structural Break Validation}
-\textbf{LinkedIn hypothesis:} AI/tech job postings exploded from 2023 onward, implying a structural regime change
-in the broader economy. If this labor market shift affected transit demand,
-recovery curves should exhibit statistically significant structural breaks around December 2022 (ChatGPT release).
-\textbf{MTA test:} Chow breakpoint test with quadratic trend specification on 4 core modes (Subway, Bus, LIRR, MNR).
-The null hypothesis of ``no structural break'' is rejected at $p < 0.05$.
-Sensitivity analysis scans $\pm 12$ months around the candidate breakpoint.
-
-\subsubsection*{Layer 2 --- Commute Pattern Validation}
-\textbf{LinkedIn hypothesis:} New-quality jobs exhibit 17.7\% remote work rates vs.\ 10.2\% for traditional jobs ($\chi^2$, $p<.001$),
-predicting a decline in peak-hour commuting intensity.
-\textbf{MTA test:} For each of 428 subway stations, we compute the annual \emph{commute ratio}
-$\text{CR}_i^{(y)} = \text{AM}_i^{(y)} / \text{PM}_i^{(y)}$, where AM = morning peak entries, PM = evening peak entries.
-We then track the share of ``commute-type'' stations ($0.7 \leq \text{CR} \leq 1.3$)
-and perform KMeans clustering ($k=4$) to classify stations into commute-type, mixed, residential, and commercial categories.
-
-\subsubsection*{Layer 3 --- Mode Substitution Validation}
-\textbf{LinkedIn hypothesis:} High-salary new-quality positions concentrate in Manhattan,
-lengthening average commute distances. Wealthier workers can afford faster commuter rail (LIRR/MNR).
-\textbf{MTA test:} We test whether the recovery hierarchy follows
-LIRR/MNR $>$ Subway $>$ Bus, consistent with longer-distance, higher-fare commuting dominating the recovery.
-
-\subsection{NLP Topic Modeling}
-
-We apply two complementary strategies to classify job postings:
-
-\textbf{Strategy A (Unsupervised):} TF-IDF vectorization ($n=5000$, 1--2 ngrams) followed by NMF
-decomposition ($k=20$) on 80,000 sampled postings, then full transform on 96,939 records.
-Topics whose top-15 keywords overlap with the new-quality seed lexicon are labeled as new-quality.
-
-\textbf{Strategy B (Semi-supervised):} A 7-category seed lexicon derived from the 1.3M job skills corpus.
-Each posting receives a seed density score based on keyword hits per 1,000 characters.
-Postings with hits in $\geq 2$ categories or density above the 75th percentile are classified as new-quality.
-
-\textbf{Final classification:} A posting is new-quality if \emph{either} Strategy A (NMF topic match)
-\emph{or} Strategy B (seed lexicon) flags it. This dual-insurance approach balances
-data-driven discovery with theory-guided classification.
-
-\subsection{Chow Structural Break Test}
-
-For each transit mode $m$, we fit a quadratic trend model:
-\begin{equation}
-R_t^{(m)} = \beta_0 + \beta_1 t + \beta_2 t^2 + \varepsilon_t
-\label{eq:quadratic}
-\end{equation}
-where $R_t^{(m)}$ is the monthly recovery rate and $t$ indexes months since March 2020.
-The Chow test partitions the sample at candidate breakpoint $T_b$ (December 2022),
-fits separate regressions on each segment, and constructs the $F$-statistic:
-\begin{equation}
-F = \frac{(\text{RSS}_{\text{pooled}} - (\text{RSS}_1 + \text{RSS}_2)) / k}
-         {(\text{RSS}_1 + \text{RSS}_2) / (n_1 + n_2 - 2k)}
-\label{eq:chow}
-\end{equation}
-where $k=3$ (number of parameters) and $n_1, n_2$ are segment sizes.
-Sensitivity is assessed by scanning all candidate breakpoints within $\pm 12$ months.
-
-\subsection{Machine Learning Validation}
-
-We construct a station-level feature matrix $\mathbf{X} \in \mathbb{R}^{428 \times 11}$:
-\begin{equation}
-\begin{aligned}
-\mathbf{X} = [&\text{commute\_ratio}, \text{entries\_cv}, \text{peak\_morning}, \text{peak\_evening},\\
-              &\text{avg\_daily\_entries}, \text{yoy\_2023\_vs\_2022}, \text{yoy\_2024\_vs\_2023},\\
-              &\text{borough\_Brooklyn}, \text{borough\_Manhattan}, \text{borough\_Queens}, \text{borough\_S.I.}]
-\end{aligned}
-\end{equation}
-and target vector $\mathbf{y} = \text{recovery\_2024\_vs\_2022}$ (station-level recovery rate).
-We train XGBoost ($n=200$, $\text{depth}=5$) with 5-fold cross-validation
-and benchmark against RandomForest and Ridge regression.
-SHAP values (TreeExplainer with interventional approximation) quantify feature contributions.
-
-% ===================================================================
-\section{Results}
-% ===================================================================
-
-\subsection{MTA Recovery Dynamics}
-
-Figure~\ref{fig:recovery} shows the full recovery trajectories across 9 transit modes.
-The pandemic shock depth varies dramatically: Subway bottomed at 9.9\% of baseline,
-while Bridges \& Tunnels (38.9\%) and AAR (23.0\%) experienced milder impacts.
-As of June 2026, MNR (136.3\%), BT (124.2\%), AAR (154.6\%), and LIRR (107.4\%)
-have exceeded pre-pandemic levels, while Subway (91.5\%), Bus (65.2\%), and SIR (53.8\%) remain below.
-This divergence suggests a \emph{structural substitution} away from short-haul, high-contact transit.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{figures/fig1_recovery_curves.png}
-\caption{Recovery curves for 9 MTA transit modes (March 2020 -- June 2026).
-Top panel: absolute daily ridership; bottom panel: recovery rate relative to pre-pandemic baseline.}
-\label{fig:recovery}
-\end{figure}
-
-\subsection{Structural Break Analysis}
-
-Table~\ref{tab:chow} presents Chow test results for the December 2022 AI inflection point.
-Three of four core modes exhibit significant structural breaks under quadratic trend specification.
-Bus shows the strongest break ($F=9.4$, $p<.001$), consistent with its continued decline post-2022
-suggesting a permanent structural substitution. LIRR is the sole exception ($F=1.6$, $p=.195$),
-implying that commuter rail recovery followed a more continuous trajectory.
+表~\ref{tab:nq_vs_trad} 对比了新质行业与传统行业的核心特征。
+四个维度均呈现统计显著差异：新质行业远程率高出 7.5 个百分点（$p<.001$），
+薪资中位溢价 +\$30,567，技能集中度约为传统的 3 倍，岗位描述文本长 40\%——
+与技术性、专业化程度更高的岗位特征一致。
 
 \begin{table}[H]
 \centering
-\caption{Chow structural break test results (Dec 2022, quadratic trend)}
-\label{tab:chow}
-\begin{tabular}{@{}lrrcl@{}}
-\toprule
-\textbf{Mode} & \textbf{F} & \textbf{p-value} & \textbf{Break?} & \textbf{$n_{\text{pre}}/n_{\text{post}}$} \\
-\midrule
-Subway & 3.9 & 0.0123 & ** & 33/43 \\
-Bus    & 9.4 & 0.0000 & *** & 33/43 \\
-LIRR   & 1.6 & 0.1949 & n.s. & 33/43 \\
-MNR    & 5.0 & 0.0033 & *** & 33/43 \\
-\bottomrule
-\multicolumn{5}{@{}l}{\footnotesize $^{***}p<.01$, $^{**}p<.05$, n.s. = not significant. Sensitivity scanning confirms robustness.}
-\end{tabular}
-\end{table}
-
-Sensitivity analysis for the Subway mode scanning $\pm 12$ months around December 2022
-reveals that the $F$-statistic varies from 30.4 to 43.4, with the maximum occurring at March 2022.
-This suggests a gradual structural transition rather than a single sharp breakpoint,
-consistent with the progressive adoption of AI technologies across industries.
-
-\subsection{Commute Ratio Evolution}
-
-Figure~\ref{fig:commute} traces yearly commute ratio distributions across 426 stations (2022--2024).
-Key findings:
-\begin{itemize}
-  \item Commute-type station share ($0.7 \leq \text{CR} \leq 1.3$): 16.9\% (2022) $\to$ 16.7\% (2023) $\to$ 15.0\% (2024), a decline of 1.9 percentage points.
-  \item Median commute ratio increased from 1.823 to 1.942, suggesting \emph{peak polarization} rather than flattening:
-        stations with high morning-to-evening ratios became more extreme, while the share of balanced stations declined.
-  \item KMeans clustering ($k=4$) identified commercial (C0, $n=92$, $\text{CR}=0.62$), residential (C1, $n=66$, $\text{CR}=1.97$;
-        C2, $n=169$, $\text{CR}=1.55$; C3, $n=101$, $\text{CR}=3.35$) station types.
-\end{itemize}
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.88\textwidth]{figures/fig7_commute_ratio_evolution.png}
-\caption{Commute ratio distribution evolution (2022--2024). KDE curves show a rightward shift in the distribution,
-indicating increasing morning-to-evening asymmetry rather than the predicted flattening.}
-\label{fig:commute}
-\end{figure}
-
-\subsection{LinkedIn NLP: New-Quality Industry Portrait}
-
-NMF topic modeling on 96,939 postings identified 20 topics (Fig.~\ref{fig:topics}).
-One topic clearly aligns with new-quality sectors: Topic~4 (cloud, data, software, engineer, developer).
-The seed lexicon approach identified 31,565 (32.6\%) postings as new-quality;
-the combined strategy classifies 35,421 (36.5\%) postings as new-quality.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.95\textwidth]{figures/fig8_topic_keywords_heatmap.png}
-\caption{NMF topic-keyword heatmap: 20 topics $\times$ top-10 keywords.
-Topic 4 (cloud/DevOps + data analytics) is the sole new-quality topic under the NMF strategy.}
-\label{fig:topics}
-\end{figure}
-
-Table~\ref{tab:nq_vs_trad} contrasts new-quality versus traditional industries.
-All four dimensions show statistically significant differences:
-remote work rate is 7.5 percentage points higher in new-quality sectors ($p<.001$),
-salary premium reaches \$30,567 at median, skill concentration is nearly 3$\times$ higher,
-and job descriptions are 40\% longer---consistent with more technical, specialized roles.
-
-\begin{table}[H]
-\centering
-\caption{New-quality vs.\ traditional industry comparison}
+\caption{新质行业 vs 传统行业画像对比}
 \label{tab:nq_vs_trad}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-\textbf{Dimension} & \textbf{New-Quality} & \textbf{Traditional} & \textbf{Difference} & \textbf{Test} \\
+\textbf{维度} & \textbf{新质行业} & \textbf{传统行业} & \textbf{差异} & \textbf{检验} \\
 \midrule
-Remote rate          & 17.7\% & 10.2\% & +7.5pp & $\chi^2$, $p<.001$ \\
-Median salary        & \$106,250 & \$75,683 & +\$30,567 & MWU, $p<.001$ \\
-Full-time share      & 79.4\% & 81.1\% & $-$1.7pp & $\chi^2$, $p<.001$ \\
-Skill concentration  & 3.2 categories & 1.1 categories & +2.1 & $t$-test, $p<.001$ \\
-Description length   & 4,556 chars & 3,263 chars & +1,293 & $t$-test, $p<.001$ \\
+远程率          & 17.7\% & 10.2\% & +7.5pp & $\chi^2$, $p<.001$ \\
+薪资中位        & \$106,250 & \$75,683 & +\$30,567 & MWU, $p<.001$ \\
+全职占比        & 79.4\% & 81.1\% & $-$1.7pp & $\chi^2$, $p<.001$ \\
+技能集中度      & 3.2 类 & 1.1 类 & +2.1 & $t$ 检验, $p<.001$ \\
+描述文本长度    & 4,556 字符 & 3,263 字符 & +1,293 & $t$ 检验, $p<.001$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Figure~\ref{fig:salary} visualizes the salary distribution gap between new-quality and traditional sectors.
-The new-quality distribution is right-shifted with a heavier upper tail,
-reflecting the concentration of high-salary AI/tech positions above \$200,000.
+图~\ref{fig:salary} 直观展示了新质与传统行业的薪资分布差异。
+新质行业的薪资分布整体右移且上尾更厚，反映了高薪 AI/科技岗位（\$200,000 以上）的集中分布。
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/fig9_salary_distribution.png}
-\caption{Salary distribution: new-quality vs.\ traditional jobs.
-Dashed lines indicate medians (\$106,250 vs.\ \$75,683).}
+\caption{新质 vs 传统行业薪资核密度分布。虚线标注中位数（\$106,250 vs \$75,683）。}
 \label{fig:salary}
 \end{figure}
 
-\subsection{Three-Layer Cross-Validation}
+\subsection{预处理管道}
+
+所有原始 CSV 文件通过基于 DuckDB~\cite{duckdb2019} 的 ETL 管道处理，
+8~GB 的小时级刷卡数据在 200~MB 内存峰值内完成聚合。
+中间结果缓存为 Parquet 格式，保证可复现性。
+全流程对 129.4 万条技能记录和 9.7 万条岗位描述进行 TF-IDF 向量化
+（$n_{\text{特征}}=5000$，1--2 元语法）和 NMF 分解（$k=20$ 主题）。
+
+% ===================================================================
+\section{方法}
+% ===================================================================
+
+\subsection{三层交叉验证框架}
+
+本文核心方法论创新是"假设驱动 + 结构化推论"的三层验证设计（图~\ref{fig:framework}），
+将 LinkedIn NLP 输出视为\textbf{假设}，MTA 客流数据视为\textbf{证据}，
+两个推理链条保持严格独立。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{figures/fig11_three_layer_validation.png}
-\caption{Three-layer cross-validation synthesis: L1 structural break test across 4 modes,
-L2 commute ratio yearly comparison, L3 mode recovery hierarchy.}
-\label{fig:validation}
+\includegraphics[width=0.88\textwidth]{figures/fig11_three_layer_validation.png}
+\caption{三层交叉验证综合面板图。L1：四方式恢复曲线 + 结构断点标注；
+L2：逐年通勤比分布对比；L3：各方式当前恢复率排序。}
+\label{fig:framework}
 \end{figure}
 
-\textbf{L1 --- Structural Break: PASS (3/4 modes).}
-Subway, Bus, and MNR all exhibit significant Chow breaks at December 2022.
-The AI-driven job boom hypothesis is \emph{supported} by MTA behavioral evidence:
-3 of 4 core modes show a statistically significant regime change.
+\subsubsection*{L1 —— 结构断点验证}
 
-\textbf{L2 --- Commute Pattern: WEAK SUPPORT.}
-The commute-type station share declined from 16.9\% to 15.0\% ($\Delta=-1.9$pp),
-directionally consistent with the remote work hypothesis but not statistically significant ($p=0.260$).
-The effect size is small (1.9 pp over 2 years), suggesting either that remote work's impact
-on peak structure is gradual, or that other forces (e.g., hybrid work maintaining some peak demand)
-countervail the remote-work effect.
+\textbf{LinkedIn 推论：}AI/科技岗位自 2023 年起爆发式增长，意味着更广泛的产业结构性变化。
+若该变化传导至交通需求，MTA 恢复曲线应在 2022 年 12 月（ChatGPT 发布节点）附近
+出现统计显著的结构断点。
 
-\textbf{L3 --- Mode Substitution: PASS.}
-The recovery hierarchy LIRR/MNR (122.5\%) $>$ Subway (89.9\%) $>$ Bus (68.3\%) is perfectly ordered,
-strongly supporting the salary-commute-distance hypothesis (Fig.~\ref{fig:modes}).
-Manhattan station recovery (median 1.127) exceeds outer borough recovery (median 1.066),
-further consistent with high-salary job concentration.
+\textbf{MTA 检验：}对 Subway、Bus、LIRR、MNR 四种核心方式逐一进行 Chow 断点检验，
+采用二次趋势模型以控制恢复曲线的非线性特征。
+\textbf{固定点检验}在候选断点 2022-12-01 处检验假设；
+\textbf{灵敏度分析}在 $\pm 12$ 个月范围内逐月扫描 $F$ 统计量，
+寻找实际数据驱动的 $F$ 峰值位置；
+同时以 2021-06-01 和 2023-06-01 作为安慰剂对照点，
+检验是否``任何时间点都显著''——若安慰剂也全部显著，则说明 Chow 检验捕捉到的是恢复趋势的整体非线性，
+而非特定外生冲击。
 
-\textbf{Synthesis: MODERATE SUPPORT (2/3 layers passed).}
-New-quality productivity's impact on transit behavior is structurally detectable
-but heterogeneous: mode substitution (L3) and temporal structure breaks (L1) are clear,
-while peak-hour pattern weakening (L2) remains nascent.
+\subsubsection*{L2 —— 通勤模式验证}
+
+\textbf{LinkedIn 推论：}新质行业远程率 17.7\%，显著高于传统行业 10.2\%（$\chi^2$, $p<.001$），
+意味着通勤高峰应出现弱化趋势。
+
+\textbf{MTA 检验：}逐年计算 428 站点的通勤比
+$\text{CR}_i^{(y)} = \text{AM}_i^{(y)} / \text{PM}_i^{(y)}$（早高峰进站量/晚高峰进站量），
+追踪"通勤型站点"（$0.7 \leq \text{CR} \leq 1.3$）的占比变化。
+同时采用 KMeans 聚类（$k=4$）将站点划分为通勤型、混合型、居住型、商业型四类，
+分析各类站点的恢复模式差异。
+
+\subsubsection*{L3 —— 运输方式替代验证}
+
+\textbf{LinkedIn 推论：}高薪新质岗位高度集中于曼哈顿，通勤距离拉长，
+高收入群体更倾向于选择通勤铁路（LIRR/MNR）而非短途公交。
+这一推论与远程办公可行性研究一致——高薪知识工作者的远程可操作性远高于低薪服务岗位~\cite{dingel2020}，
+而远程办公普及正在结构性改变通勤需求~\cite{salon2022}。
+
+\textbf{MTA 检验：}检验各方式当前恢复率是否遵循 LIRR/MNR $>$ Subway $>$ Bus 的层级，
+以及曼哈顿站点恢复率是否高于外围行政区站点。
+
+\subsection{NLP 主题建模}
+
+本文采用互补的双策略对岗位进行分类：
+
+\textbf{策略 A（无监督 NMF）：}对 9.7 万条岗位描述进行 TF-IDF 向量化（$n=5000$，ngram 1--2），
+采样 8 万条拟合 NMF 模型（$k=20$）~\cite{lee1999}，全量分块变换。
+主题 top-15 关键词与 7 类新质种子词库存在交集的，标记为"新质主题"。
+
+\textbf{策略 B（种子词库半监督）：}基于 129.4 万条技能语料验证过的 7 类种子词库，
+对每条岗位描述进行向量化关键词密度打分（命中数/千字符）。
+命中 $\geq 2$ 类或密度高于 75 分位数的标记为"新质"。
+
+\textbf{最终判定：}策略 A（NMF 主题匹配）\textbf{或}策略 B（种子词库命中）触发即判为新质岗位。
+这一"双重保险"策略兼顾了数据驱动的行业发现和理论引导的种子词库判断。
+
+\subsection{Chow 结构断点检验}
+
+对各运输方式 $m$，拟合二次趋势模型：
+\begin{equation}
+R_t^{(m)} = \beta_0 + \beta_1 t + \beta_2 t^2 + \varepsilon_t
+\label{eq:quadratic}
+\end{equation}
+其中 $R_t^{(m)}$ 为月度恢复率，$t$ 为自 2020 年 3 月起的月份序号。
+Chow 检验在候选断点 $T_b$（2022 年 12 月）处将样本分割为两段，分别拟合回归，
+构造 $F$ 统计量：
+\begin{equation}
+F = \frac{(\text{RSS}_{\text{合并}} - (\text{RSS}_1 + \text{RSS}_2)) / k}
+         {(\text{RSS}_1 + \text{RSS}_2) / (n_1 + n_2 - 2k)}
+\label{eq:chow}
+\end{equation}
+其中 $k=3$（参数个数），$n_1, n_2$ 为分段样本量。
+灵敏度分析在 $\pm 12$ 个月内逐月扫描所有候选断点，寻找实际 $F$ 统计量峰值位置。
+同时增设 2021 年 6 月和 2023 年 6 月两个安慰剂对照点（仅使用线性趋势），
+以验证 Chow 检验的判别能力——若安慰剂也全部显著，
+则说明检验可能捕捉到恢复曲线本身的非线性而非特定外生冲击。
+
+\subsection{机器学习验证}
+
+构建站点级特征矩阵 $\mathbf{X} \in \mathbb{R}^{428 \times 11}$：
+\begin{equation}
+\begin{aligned}
+\mathbf{X} = [&\text{commute\_ratio}, \text{entries\_cv}, \text{peak\_morning}, \text{peak\_evening},\\
+              &\text{avg\_daily\_entries}, \text{yoy\_2023\_vs\_2022}, \text{yoy\_2024\_vs\_2023},\\
+              &\text{borough\_Bk}, \text{borough\_Mn}, \text{borough\_Qn}, \text{borough\_SI}]
+\end{aligned}
+\end{equation}
+目标变量 $\mathbf{y} = \text{recovery\_2024\_vs\_2022}$（站点恢复率）。
+训练 XGBoost~\cite{chen2016}（$n=200$, $\text{depth}=5$）并进行 5 折交叉验证，
+以 RandomForest 和 Ridge 回归作为基准模型对比。
+采用 SHAP TreeExplainer~\cite{lundberg2017}（interventional 近似）量化各特征对恢复率的边际贡献。
+
+% ===================================================================
+\section{结果}
+% ===================================================================
+
+\subsection{MTA 恢复动态总览}
+
+图~\ref{fig:recovery} 展示了 9 种运输方式自疫情冲击以来的完整恢复轨迹。
+疫情冲击深度差异巨大：Subway 最低跌至基线的 9.9\%，
+而 BT（38.9\%）和 AAR（23.0\%）冲击相对温和。
+截至 2026 年 6 月，MNR（136.3\%）、AAR（154.6\%）、BT（124.2\%）、LIRR（107.4\%）
+均已超过疫情前水平，而 Subway（91.5\%）、Bus（65.2\%）、SIR（53.8\%）仍存在缺口。
+这一分化暗示着从短途、高接触公共交通向其他出行方式的\textbf{结构性替代}。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.85\textwidth]{figures/fig13_mode_recovery_ranking.png}
-\caption{Current recovery rates by transit mode, with tier classification.
-Commuter rail (LIRR/MNR) and regional rail (AAR, BT) dominate recovery;
-local transit (Bus, SIR) shows persistent deficits.}
-\label{fig:modes}
+\includegraphics[width=0.95\textwidth]{figures/fig1_recovery_curves.png}
+\caption{9 种 MTA 运输方式恢复曲线（2020 年 3 月 -- 2026 年 6 月）。
+上图：绝对日运量；下图：相对于疫情前基线的恢复率。}
+\label{fig:recovery}
 \end{figure}
 
-\subsection{Machine Learning: Feature Importance}
+\subsection{结构断点检验}
 
-SHAP analysis (Fig.~\ref{fig:shap}) reveals that year-over-year ridership change rates
-dominate station recovery prediction, with \texttt{yoy\_2024\_vs\_2023} ($|\text{SHAP}|=0.051$)
-and \texttt{yoy\_2023\_vs\_2022} ($|\text{SHAP}|=0.045$) as the top two features.
-Commute ratio ranks third ($|\text{SHAP}|=0.003$), confirming that temporal dynamics
-carry substantially more information than static station characteristics.
+\subsubsection*{固定点 Chow 检验}
+
+表~\ref{tab:chow} 呈现了 2022 年 12 月假设断点的 Chow 检验结果。
+在二次趋势设定下，四种核心方式中三种存在统计显著的结构断点。
+Bus 的断点最强（$F=9.4$, $p<.001$），Subway（$F=3.9$, $p=.012$）和 MNR（$F=5.0$, $p=.003$）亦显著。
+LIRR 是唯一的例外（$F=1.6$, $p=.195$），表明通勤铁路的恢复过程更为平滑连续。
+
+\begin{table}[H]
+\centering
+\caption{Chow 结构断点检验结果——假设断点（2022-12，二次趋势）vs 安慰剂对照}
+\label{tab:chow}
+\begin{tabular}{@{}lrrcccc@{}}
+\toprule
+\multirow{2}{*}{\textbf{方式}} & \multicolumn{2}{c}{\textbf{假设断点 2022-12}} & \multicolumn{2}{c}{\textbf{安慰剂 2021-06}} & \multicolumn{2}{c}{\textbf{安慰剂 2023-06}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+ & F & p & F & p & F & p \\
+\midrule
+Subway & 3.9 & 0.0123 & 40.1 & $<$.001 & 39.1 & $<$.001 \\
+Bus    & 9.4 & $<$.001 & 44.2 & $<$.001 & 21.6 & $<$.001 \\
+LIRR   & 1.6 & 0.1949 & 15.3 & $<$.001 & 20.3 & $<$.001 \\
+MNR    & 5.0 & 0.0033 & 26.9 & $<$.001 & 24.6 & $<$.001 \\
+\bottomrule
+\multicolumn{7}{@{}l}{\footnotesize 假设断点使用二次趋势；安慰剂使用线性趋势。2020-04-01 因样本量不足（$n_{\text{前}}<2$ 月）标记为数据不足。}
+\end{tabular}
+\end{table}
+
+\subsubsection*{灵敏度扫描与安慰剂检验}
+
+为验证 2022 年 12 月是否为真正的结构断点，我们对四种核心方式分别进行了
+$\pm 12$ 个月的逐月灵敏度扫描，寻找实际 $F$ 统计量的峰值位置。
+同时，我们增设了两个安慰剂对照点（2021 年 6 月、2023 年 6 月），
+检验 Chow 检验是否对``任何合理的时间点''都显著。
+
+{\bfseries 灵敏度扫描结果（表~\ref{tab:chow_peak}）：}
+四种核心方式的 $F$ 统计量峰值均不在假设断点 2022 年 12 月：
+Subway 和 MNR 的峰值在 2022 年 3 月（纽约全面解封期），
+Bus 的峰值在 2021 年 12 月（Omicron 疫情波峰），
+LIRR 的峰值在 2023 年 5 月（晚于 ChatGPT 发布约 5 个月）。
+偏离幅度从 151 天到 365 天不等。
+
+\begin{table}[H]
+\centering
+\caption{灵敏度扫描：实际 $F$ 峰值 vs 假设断点}
+\label{tab:chow_peak}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{方式} & \textbf{$F$ 峰值日期} & \textbf{峰值 $F$} & \textbf{2022-12 $F$} & \textbf{偏差（天）} \\
+\midrule
+Subway & 2022-03-01 & 43.4 & 41.9 & $-$275 \\
+Bus    & 2021-12-01 & 43.1 & 27.6 & $-$365 \\
+LIRR   & 2023-05-01 & 20.3 & 18.0 & +151 \\
+MNR    & 2022-03-01 & 24.9 & 23.4 & $-$275 \\
+\bottomrule
+\multicolumn{5}{@{}l}{\footnotesize 偏差 = 实际峰值日期 $-$ 2022-12-01。负值表示峰值早于假设断点。}
+\end{tabular}
+\end{table}
+
+\textbf{安慰剂检验结果（表~\ref{tab:chow} 右四列）：}
+两个安慰剂对照点在所有四种方式上均高度显著（全部 $p<.001$），
+且 $F$ 统计量普遍高于假设断点——Bus 在 2021 年 6 月的 $F=44.2$ 是假设断点 $F=9.4$ 的 4.7 倍。
+这意味着 Chow 检验在恢复曲线的``任何位置''都可能检测到显著的结构变化，
+因为恢复函数本身就具有非线性特征。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig4b_chow_sensitivity.png}
+\caption{Chow 灵敏度扫描（以 Subway 为例）。
+\textbf{红实线}标注实际 $F$ 峰值位置（2022-03-01），
+\textbf{橙虚线}标注假设断点（2022-12-01）。
+$F$ 峰值出现在全面解封期而非 ChatGPT 发布节点。}
+\label{fig:chow_sensitivity}
+\end{figure}
+
+综合以上三项检验，我们得出一个更为审慎的判断：
+虽然 2022 年 12 月的 Chow 检验在 3/4 方式上统计显著，
+但灵敏度扫描和安慰剂检验的证据表明，
+\textbf{恢复曲线中的结构性变化更可能反映疫情复苏的多阶段过程，
+而非单一的 ChatGPT/AI 外生冲击}。
+Subway 和 MNR 的峰值对齐 2022 年 3 月全面解封，
+Bus 的峰值对齐 2021 年 12 月 Omicron 波，
+这些时间点与疫情政策时间线的吻合度高于 AI 技术时间线。
+L1 验证结论因此从``通过''下调为\textbf{弱支持}。
+
+\subsection{通勤比演化}
+
+逐年通勤比分析（2022--2024 年，426 站点）的主要发现：
+\begin{itemize}
+  \item 通勤型站点（$0.7 \leq \text{CR} \leq 1.3$）占比：16.9\%（2022）$\to$ 16.7\%（2023）$\to$ 15.0\%（2024），累计下降 1.9 个百分点；
+  \item 通勤比中位数从 1.823 升至 1.942，呈现\textbf{高峰极化}特征——早晚高峰不对称的站点变得更极端，而非预测中的"扁平化"；
+  \item KMeans 聚类（$k=4$）识别出商业型（C0, $n=92$, CR=0.62）、居住型（C1, $n=66$, CR=1.97；C2, $n=169$, CR=1.55；C3, $n=101$, CR=3.35）。
+\end{itemize}
+
+\subsection{三层交叉验证综合判决}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{figures/fig4_chow_breakpoints.png}
+\caption{Chow 结构断点图：四种核心方式的恢复曲线。
+\textbf{红实线}标注各方式灵敏度扫描的实际 $F$ 峰值位置（数据驱动断点）；
+\textbf{蓝虚线}标注假设断点 2022-12（ChatGPT 发布）；
+\textbf{灰点线}标注疫情冲击 2020-04（数据不足，仅供参考）。
+各方式实际 $F$ 峰值均偏离假设断点 151--365 天。}
+\label{fig:chow}
+\end{figure}
+
+\textbf{L1 —— 结构断点验证：弱支持。}
+假设断点 2022-12 的固定点 Chow 检验在 3/4 方式上统计显著，
+但灵敏度扫描显示所有四种方式的实际 $F$ 峰值均偏离假设断点 151--365 天，
+且两个安慰剂对照点全部高度显著（$p<.001$）。
+Subway 和 MNR 的峰值在 2022 年 3 月（全面解封），
+Bus 的峰值在 2021 年 12 月（Omicron），
+LIRR 的峰值在 2023 年 5 月。
+这些证据表明，恢复曲线的结构性变化更可能反映疫情复苏的多阶段进程，
+而非单一的 AI 外生冲击。
+\textbf{LinkedIn"AI 岗位爆发"推论未获 MTA 行为数据的排他性支持}——AI 的影响
+可能与疫情复苏效应混淆，需要更长时间序列或更精细的因果识别策略来分离。
+
+\textbf{L2 —— 通勤模式验证：弱支持。}
+通勤型站点占比从 16.9\% 降至 15.0\%（$\Delta=-1.9$pp），方向符合远程办公假说，
+但统计不显著（$p=0.260$）。
+效应量较小（2 年仅 1.9 个百分点），可能原因包括：
+（1）远程办公对高峰结构的影响是渐进的；
+（2）混合办公模式维持了部分通勤需求，对冲了削弱效应。
+
+\textbf{L3 —— 运输方式替代验证：通过。}
+恢复层级 LIRR/MNR（122.5\%）$>$ Subway（89.9\%）$>$ Bus（68.3\%）完美排序，
+强有力地支持了薪资-通勤距离假说。
+曼哈顿站点恢复率中位（1.127）高于外围站点（1.066），
+进一步验证了高薪岗位空间集中的推论。
+值得注意的是，L3 的成立并不依赖于 L1 的时间节点——运输方式的层级分化
+可能是长期结构性趋势，而非特定时间点的突变。
+
+\textbf{综合判决：弱支持（1/3 层通过、2/3 层弱支持）。}
+新质生产力对城市交通的影响在运输方式替代维度（L3）上可清晰检测，
+但\textbf{时间断点（L1）的证据指向多因混合而非单一 AI 冲击}，
+\textbf{通勤高峰模式（L2）的变化尚处于统计边界}。
+总体而言，交通系统对新质生产力的响应是渐进、异质且与疫情复苏效应交织的。
+
+\paragraph{机器学习稳健性检验。}
+为验证上述三层结论的稳健性，我们构建了站点级特征矩阵
+$\mathbf{X} \in \mathbb{R}^{428 \times 11}$，训练 XGBoost~\cite{chen2016}、
+RandomForest 与 Ridge 回归预测站点恢复率。
+SHAP 分析（图~\ref{fig:shap}）表明，年度客流变化率
+（\texttt{yoy\_2024\_vs\_2023}, $|\text{SHAP}|=0.051$）是最强预测因子，
+通勤比排名第三（$|\text{SHAP}|=0.003$），
+确认了时序动态信息远强于静态站点特征。
+Ridge 回归近乎完美拟合（$R^2=0.995$，表~\ref{tab:models}），
+XGBoost（$R^2=0.950$）和 RandomForest（$R^2=0.955$）表现竞争性，
+进一步支撑了特征集的稳健性。
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.90\textwidth]{figures/fig16_shap_bar.png}
-\caption{SHAP feature importance (mean $|$SHAP$|$).
-Year-over-year change rates dominate; commute ratio is the strongest structural feature.}
+\caption{SHAP 特征重要性均值排名。年度变化率主导模型预测；
+通勤比是最强的结构性特征。}
 \label{fig:shap}
 \end{figure}
 
-Table~\ref{tab:models} compares model performance.
-Ridge regression achieves nearly perfect fit ($R^2=0.995$), consistent with the small sample size
-($n=428$) and strong linearity among features. XGBoost ($R^2=0.950$) and RandomForest ($R^2=0.955$)
-perform competitively, confirming the robustness of the feature set.
-
 \begin{table}[H]
 \centering
-\caption{Model performance comparison (station recovery prediction)}
+\caption{模型性能对比（站点恢复率预测）}
 \label{tab:models}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
-\textbf{Model} & \textbf{CV $R^2$ (mean $\pm$ std)} & \textbf{Test $R^2$} & \textbf{Test RMSE} \\
+\textbf{模型} & \textbf{CV $R^2$（均值 $\pm$ 标准差）} & \textbf{测试 $R^2$} & \textbf{测试 RMSE} \\
 \midrule
 XGBoost       & $0.856 \pm 0.057$ & 0.950 & 0.029 \\
 RandomForest  & $0.925 \pm 0.019$ & 0.955 & 0.027 \\
@@ -412,135 +498,138 @@ Ridge         & $0.989 \pm 0.004$ & 0.995 & 0.009 \\
 \end{table}
 
 % ===================================================================
-\section{Discussion}
+\section{讨论}
 % ===================================================================
 
-\subsection{Theoretical Implications}
+\subsection{理论含义}
 
-Our findings contribute to three strands of urban studies literature.
-First, the structural break evidence (L1) suggests that \emph{macroeconomic technology shocks}
----not just pandemic-related behavioral shifts---are detectable in transit data.
-The December 2022 breakpoint, coinciding with the public release of ChatGPT and the subsequent
-AI investment surge, represents an exogenous shock orthogonal to pandemic recovery dynamics.
+本研究的发现对城市经济学与交通研究具有三重理论贡献，
+同时也提出了一个关于"技术冲击如何被城市基础设施吸收"的新命题。
 
-Second, the mode substitution hierarchy (L3) challenges the conventional wisdom that
-post-pandemic transit recovery is simply ``not back to normal.''
-Rather, recovery is \emph{structurally differentiated}: commuter rail serving high-income,
-long-distance suburban professionals has surged past pre-pandemic levels,
-while local transit serving lower-income, shorter-distance trips remains in deficit.
-This inequality in transit recovery mirrors the labor market's bifurcation
-into high-salary new-quality jobs and lower-wage traditional service jobs.
+\textbf{第一，方法论层面：结构断点检验在非线性趋势中的适用性警示。}
+L1 的结果提供了一个具有普遍意义的计量经济学教训：
+当恢复函数本身具有多阶段非线性特征时（如疫情后的交通复苏），
+固定点 Chow 检验的拒绝域会被系统性膨胀~\cite{chow1960,bai2003}。
+本研究的灵敏度扫描显示，四种核心方式的 $F$ 峰值分散于 2021 年 12 月至 2023 年 5 月之间，
+且安慰剂对照点全部高度显著——这意味着恢复曲线上的``任何位置''都可能触发结构断点信号。
+因此，若未来研究试图以单点断点来识别 AI 对交通的因果效应，
+必须在研究设计中嵌入\textbf{灵敏度扫描 + 安慰剂对照}的双重校验机制。
+更重要的是，L1 的"不显著"并不等同于"AI 影响不存在"，
+而是提示我们：\textbf{新质生产力的交通效应可能是渐进渗透而非单点突变的}。
+这一判断与技术创新在基础设施中扩散的经典规律一致——技术冲击首先重塑就业结构，
+再通过劳动力的空间重新配置间接传导至交通需求，其时滞与平滑性远超简单的"冲击-响应"模型。
 
-Third, the weak L2 result (commute ratio) is itself informative.
-The predicted peak-hour flattening is not yet significant, suggesting that
-\emph{hybrid work}---rather than full remote---may be the dominant mode.
-Hybrid workers still commute, just less frequently, and on non-standard schedules.
-This is consistent with the observed \emph{peak polarization} (median commute ratio \emph{increasing})
-rather than flattening: some stations become more extremely morning- or evening-dominated.
+\textbf{第二，城市经济学层面：任务极化的交通映射。}
+L3 发现的运输方式层级分化（LIRR/MNR $>$ Subway $>$ Bus）可以从任务替代理论中获得更深层的解释。
+Acemoglu \& Restrepo (2018) 指出，自动化对劳动市场的影响取决于"任务内容"而非"行业标签"：
+抽象性强、需要非例行认知能力的高薪任务难以被 AI 替代，反而因技术互补而扩张；
+而例行化、低技能任务则面临压缩~\cite{acemoglu2018,acemoglu2020}。
+纽约的地理现实是：高技能抽象任务高度集中于曼哈顿 CBD，迫使从业者接受长距离通勤；
+低技能服务任务则分散于各行政区，依赖短途公交。
+因此，当新质生产力扩张时，它实际上是在放大劳动力市场的"任务极化"，
+并将这种极化翻译成交通网络上的"空间极化"与"方式极化"~\cite{glaeser2001}。
+通勤铁路的超前恢复并非"交通恢复"本身，而是\textbf{高技能岗位持续集聚的空间信号}。
 
-\subsection{Limitations}
+\textbf{第三，交通规划范式：从"恢复常态"到"管理新常态"。}
+L2 的弱支持结果（高峰未扁平化、通勤比极化）与 L3 的强支持结果（方式分化）
+共同指向一个被现有规划框架低估的事实：后疫情时代的交通系统可能正在形成\textbf{双峰均衡}。
+一端是服务于新质岗位从业者的高频、长距离、弹性时间通勤（LIRR/MNR 的超额恢复）；
+另一端是服务于传统服务业者的低频、短距离、刚性通勤（Bus 的结构性赤字）。
+这种均衡对交通公平性（transport equity）具有深远含义~\cite{lucas2012}：
+若公共资源继续按照"恢复率"线性配置，则公交系统的投资不足将加剧低收入群体的出行贫困。
+未来规划不应追求"让所有方式回到 100\%"的虚假公平，
+而应识别不同就业群体的方式依赖结构，实施差异化的运力配置与票价补贴策略。
 
-Several limitations warrant caution.
-\textbf{Data scope:} The LinkedIn postings dataset covers December 2023--April 2024 only,
-capturing a cross-sectional snapshot rather than a time series.
-This prevents direct temporal matching with MTA data and limits L2 to a trend comparison
-rather than a Granger-style causal test.
-\textbf{Spatial matching:} With only 5,700 NYC-based LinkedIn profiles,
-borough-level spatial regression is underpowered ($n=5$), precluding formal spatial econometrics.
-\textbf{Unobserved confounding:} Congestion pricing (CBD/CRZ, introduced 2025),
-office return-to-work mandates, and subway safety perceptions are not modeled
-and may co-vary with both labor market changes and transit demand.
+此外，L2 观测到的"高峰极化"（而非扁平化）揭示了混合办公的真实行为模式。
+完全远程办公会削弱早晚高峰，但混合办公者仍需通勤——只是频率降低、时间更灵活。
+这导致了高峰时段的"压缩但不消失"现象：
+核心通勤者（无法远程的低技能服务岗位）的高峰更加尖锐，
+而弹性通勤者（新质岗位从业者）则将出行分散至非高峰时段，形成"高峰极化"的分布形态。
+这一发现与 Bloom et al. (2023) 关于混合办公稳定性的研究高度一致~\cite{bloom2023,barrero2021}，
+并为交通需求预测模型提供了新的微观行为基础。
 
-\subsection{Future Work}
+\subsection{政策含义}
 
-Future research should pursue three directions:
-(1) acquiring time-series job posting data to enable Granger causality testing
-between new-quality job growth and transit demand;
-(2) incorporating individual-level commuting surveys to identify the causal mechanism
-linking remote work prevalence to peak-hour behavior;
-(3) extending the framework to other global cities (London, Tokyo, Singapore)
-to test the external validity of the new-quality productivity--transit nexus.
+本研究的发现对后疫情时代的城市交通治理具有直接的政策参考价值。
+首先，\textbf{运输投资应避免"平均主义"陷阱}。
+LIRR/MNR 的超额恢复与 Bus 的持续低迷并非短期波动，而是就业结构重塑的长期信号。
+政策制定者需警惕"公交死亡螺旋"（transit death spiral）的风险：
+若公交客流持续不足导致班次削减，将进一步推低收入群体向外围迁移，加剧空间不平等。
+
+其次，\textbf{远程办公政策应与交通需求管理协同设计}。
+L2 结果表明，当前主导模式是混合办公而非完全远程，这意味着"每周在家工作几天"的弹性安排
+对高峰交通的压力缓解有限。与其将远程办公视为交通减压阀，
+不如通过动态拥堵定价、弹性工作时段激励等手段，直接管理高峰需求的时间分布。
+
+最后，\textbf{新质生产力空间布局的引导性政策需要考虑交通外部性}。
+若高薪新质岗位持续向曼哈顿集聚，长距离通勤需求将进一步扩张，
+对区域通勤铁路的运力、碳排放与城市蔓延（urban sprawl）产生连锁效应。
+在城市更新与产业规划中，将科技园区向交通枢纽节点（transit-oriented developments, TOD）
+分散配置，可能是兼顾创新集聚与可持续交通的可行路径。
+
+\subsection{局限性}
+
+本研究存在若干局限，需要谨慎解读。
+\textbf{数据时间范围：}LinkedIn 岗位详情数据仅覆盖 2023 年 12 月--2024 年 4 月，
+为截面快照而非时间序列，无法与 MTA 数据进行直接时间匹配，
+限制了 L2 分析为趋势比较而非 Granger 因果检验。
+\textbf{空间匹配精度：}LinkedIn 数据中 NYC 范围的用户画像仅约 5,700 条，
+行政区分区回归（$n=5$）统计功效不足，无法进行空间计量经济学建模。
+\textbf{未观测混杂因素：}拥堵收费（CBD/CRZ，2025 年实施）、办公室复工令、
+地铁安全感知等未纳入模型，可能与劳动力市场变化和交通需求共同变化。
+\textbf{因果识别的内生性：}本研究通过"假设-证据"的交叉验证增强了稳健性，
+但本质上仍属于观察性研究设计，无法完全排除遗漏变量对 L3 结果的威胁。
+
+\subsection{未来方向}
+
+未来研究可从三个方向推进：
+（1）获取时间序列化的岗位发布数据，以支持新质岗位增长与交通需求之间的 Granger 因果检验；
+（2）引入个体层面通勤调查数据（如纽约地区出行调查 NYMTC），
+以识别远程办公普及率与高峰行为之间的微观因果机制；
+（3）将分析框架扩展至其他全球城市（伦敦、东京、新加坡），
+检验新质生产力-交通关联的外部有效性，并探索不同土地 use 制度下的差异化响应模式。
 
 % ===================================================================
-\section{Conclusion}
+\section{结论}
 % ===================================================================
 
-This paper presents a multi-source, hypothesis-driven investigation into whether
-the rise of new-quality productivity has reshaped urban transit behavior in New York City.
-Using a three-layer cross-validation framework that independently derives hypotheses
-from LinkedIn job postings and tests them against MTA ridership data,
-we find moderate evidence for structural impacts:
+本文以假设驱动、多源时空数据交叉验证的方式，
+系统考察了新质生产力是否通过改变就业结构重塑了纽约市的城市交通格局。
+利用三层交叉验证框架，我们将 LinkedIn 岗位数据的 NLP 推论
+独立地与 MTA 客流行为证据进行对照，获得以下主要发现：
 
 \begin{enumerate}
-  \item \textbf{Structural breaks} at the December 2022 AI inflection point are significant
-        in 3 of 4 core transit modes, supporting the hypothesis that AI-driven labor market change
-        is registered in aggregate transit demand.
-  \item \textbf{Mode substitution} follows the predicted hierarchy:
-        commuter rail (LIRR/MNR) $>$ Subway $>$ Bus, consistent with high-salary
-        new-quality jobs concentrating in Manhattan and favoring longer-distance rail commuting.
-  \item \textbf{Peak-hour weakening} is directionally present but not yet statistically significant,
-        suggesting hybrid work as the dominant adaptation rather than full remote.
+  \item \textbf{结构断点证据指向多因混合：}固定点 Chow 检验在 2022 年 12 月
+        AI 假设断点上 3/4 方式显著，但灵敏度扫描显示实际 $F$ 峰值分散于
+        2021 年 12 月至 2023 年 5 月，且安慰剂对照全部显著。
+        AI 对交通需求的影响可能与疫情复苏效应混淆，在现有数据条件下无法排他性归因。
+  \item \textbf{运输方式替代成立：}LIRR/MNR $>$ Subway $>$ Bus 的恢复层级完美成立，
+        与"高薪新质岗位集中在曼哈顿、拉长通勤距离"的推论一致。
+        这一发现不依赖于特定时间节点，反映的是长期结构性趋势。
+  \item \textbf{高峰弱化尚未定论：}通勤型站点占比方向性下降但统计不显著，
+        且通勤比中位数不降反升（1.823 $\to$ 1.942），
+        提示混合办公而非完全远程可能是主导模式。
 \end{enumerate}
 
-The overarching conclusion is that new-quality productivity's impact on urban transit
-is \emph{structurally heterogeneous}: the forces of labor market restructuring have
-penetrated transit systems unevenly, favoring faster, long-distance modes serving high-skill workers
-while leaving local transit---disproportionately relied upon by lower-income, traditional-sector workers---in structural deficit.
-This divergence is both a transportation challenge and an equity concern for post-pandemic urban policy.
+总体而言，新质生产力对城市交通的影响是\textbf{结构性异质且渐进渗透的}：
+劳动力市场重构的力量已不均匀地反映在交通系统中——
+有利于服务于高技能工人的快速长途方式（L3 强支持），
+而其对通勤时间结构（L1）和高峰形态（L2）的影响尚处于统计检测边界，
+且与疫情复苏效应深度交织。
+这一分化既是交通规划的技术性挑战，也是后疫情时代城市政策的公平性议题。
+\textbf{未来研究的关键任务}是获取时间序列化的就业数据，
+以在更长的时间窗口内分离 AI 的结构性效应与疫情复苏的周期性效应。
 
 % ===================================================================
-% Acknowledgements
+% 致谢
 % ===================================================================
-\section*{Acknowledgments}
-We thank the Metropolitan Transportation Authority for open data access
-and the LinkedIn Economic Graph team for data provision.
-This research was conducted as part of [program name] at [institution].
+\section*{致谢}
+感谢 MTA 提供开放数据访问，感谢 LinkedIn Economic Graph 团队的数据支持。
 
 % ===================================================================
-% References
+% 参考文献
 % ===================================================================
-\begin{thebibliography}{10}
-
-\bibitem{autor2023}
-Autor, D., Dorn, D., Hanson, G.: The geography of remote work.
-\textit{Journal of Political Economy} (2023)
-
-\bibitem{duckdb2023}
-Raasveldt, M., M\"{u}hleisen, H.: DuckDB: an embeddable analytical database.
-\textit{Proc. SIGMOD} (2023)
-
-\bibitem{chen2023}
-Chen, S., et al.: AI and the labor market: evidence from online job postings.
-\textit{NBER Working Paper} (2023)
-
-\bibitem{chow1960}
-Chow, G.C.: Tests of equality between sets of coefficients in two linear regressions.
-\textit{Econometrica} \textbf{28}(3), 591--605 (1960)
-
-\bibitem{lundberg2017}
-Lundberg, S.M., Lee, S.-I.: A unified approach to interpreting model predictions.
-\textit{Proc. NeurIPS} (2017)
-
-\bibitem{mta2024}
-MTA: Daily ridership and traffic data (2020--2026).
-\url{https://data.ny.gov} (2024)
-
-\bibitem{bloom2021}
-Bloom, N., Han, R., Liang, J.: How hybrid working from home works out.
-\textit{NBER Working Paper} (2023)
-
-\bibitem{dingel2020}
-Dingel, J.I., Neiman, B.: How many jobs can be done at home?
-\textit{Journal of Public Economics} \textbf{189}, 104235 (2020)
-
-\bibitem{lee2019}
-Lee, D.D., Seung, H.S.: Learning the parts of objects by non-negative matrix factorization.
-\textit{Nature} \textbf{401}, 788--791 (1999)
-
-\bibitem{chen2011}
-Chen, T., Guestrin, C.: XGBoost: a scalable tree boosting system.
-\textit{Proc. KDD} (2016)
-
-\end{thebibliography}
+\bibliographystyle{splncs04}
+\bibliography{references}
 
 \end{document}
