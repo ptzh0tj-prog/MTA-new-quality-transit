@@ -242,12 +242,26 @@ y：recovery_2024_vs_2022（站点恢复率）
 | fig17 | `fig17_prediction_vs_actual.png` | 三模型预测 vs 实际对比 | 四 |
 | fig18 | `fig18_sarimax_vs_xgboost.png` | SARIMAX vs XGBoost 预测曲线 | 四 |
 
+## 环境配置
+
+本项目使用 **[uv](https://docs.astral.sh/uv/)** 管理 Python 依赖，通过 `uv.lock` 锁定精确版本以保证可复现。
+
+```bash
+# 安装 uv（如尚未安装）
+# Windows:
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+# macOS/Linux:
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 一键还原依赖环境（自动创建 .venv 并安装 uv.lock 中锁定的版本）
+uv sync
+```
+
+`uv sync` 之后，所有 `uv run python ...` 命令都会自动使用该虚拟环境，无需手动激活。
+
 ## 运行
 
 ```bash
-# 安装依赖
-uv sync
-
 # 单独运行各模块
 uv run python timeseries_analysis.py    # 模块一：MTA 时序
 uv run python postings_nlp.py           # 模块二：LinkedIn NLP（首次运行 ~10 分钟）
